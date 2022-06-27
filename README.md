@@ -13,3 +13,13 @@ Bingo, now you have anchored the text to waht the robot can do and you can say t
 Actually this works even when you tell the commands in another language (tryed it in French).
 
 You can imagine doing this for a hue lighting system or other command based app. Be creative
+
+# Requirements
+
+You need to install pytorch and clip from open-ai repository
+'''bash
+$> conda install --yes -c pytorch pytorch=1.7.1 torchvision cudatoolkit=11.0
+$> pip install ftfy regex tqdm
+$> pip install git+https://github.com/openai/CLIP.git
+'''
+
