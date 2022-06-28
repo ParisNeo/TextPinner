@@ -11,13 +11,8 @@ Bingo, now you have anchored the text to waht the robot can do and you can say t
 
 You can imagine doing this for a hue lighting system or other command based app. Be creative
 """
-import torch
-# if you don't have clip, just download it 
-# pip install ftfy regex tqdm
-# pip install git+https://github.com/openai/CLIP.git
-import clip 
-from PIL import Image
-import numpy as np
+import sys
+from TextPinner import TextPinner
 
 # You need to install speach recognition engine
 # pip install SpeechRecognition
@@ -36,29 +31,22 @@ with sr.Microphone() as source:
     audio_data = r.listen(source)
     print("Recognizing...")
     # convert speech to text
-    text = r.recognize_google(audio_data, language='en')
-    print(text)
-
-# We are going to use only the text part of Clip
-device = "cuda" if torch.cuda.is_available() else "cpu"
-model, preprocess = clip.load("ViT-B/32", device=device)
-
-# Change this to put the list of your anchor texts
-anchor_texts = ["raise right hand", "raise left hand", "nod", "shake hands", "look left", "look right"]
-anchor_texts_tokenized = clip.tokenize(anchor_texts).to(device)
-
-# Here is the command you have issued. Let's say you said it in french
-command_text = [text] # Try other ways to say this
-command_text_tokenized = clip.tokenize(command_text).to(device)
-
-with torch.no_grad():
-    # Now let's encode both text sets
-    anchor_texts_embedding = model.encode_text(anchor_texts_tokenized) # Anchor texts
-    command_text_embedding = model.encode_text(command_text_tokenized) # Just one text
-
-    #Now let's measure the distances. I have tryed the mean square distance, but you may try to play around with other distances
-    dist = [np.square((anchor_texts_embedding[i,:]-command_text_embedding[0,:])).mean() for i in range(len(anchor_texts))]
-
+    try:
+        text_command = r.recognize_google(audio_data, language='en')
+        print(text_command)
+    except:
+        print("Please say an english sentence")
+        sys.exit(1)
+# Now that we have the text, let's pin it
+tp = TextPinner(["raise right hand", "raise left hand", "nod", "shake hands", "look left", "look right", "jump"])
+output_text, index, probs, dists=tp.process(text_command)
 # Finally let's give which text is the right one
-print(f"The anchor text you are searching for is {anchor_texts[np.argmin(dist)]}")
+if index>=0:
+    # Finally let's give which text is the right one
+    print(f"The anchor text you are searching for is {output_text}")
+else:
+    print(f"Your text meaning is very far from the anchors meaning. Please try again or change the minimal accepted distance value")
 
+
+for txt, prob, dist in zip(tp.anchor_texts, probs, dists):
+    print(f"text : {txt}\t\t prob \t\t {prob:0.2f}, dist \t\t {dist:0.2f}")
