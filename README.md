@@ -26,6 +26,12 @@ Please install Open AI's Clip from their github repository. This is needed by Te
 pip install git+https://github.com/openai/CLIP.git
 ```
 
+You may also want to install cudatoolkit if you have a cuda enabled GPU. In this case, you have to use anaconda
+
+```bash
+conda install cudatoolkit
+```
+
 # USE
 First import TextPinner class
 ```Python

@@ -3,4 +3,3 @@ regex
 tqdm
 pytorch
 torchvision
-cudatoolkit
