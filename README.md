@@ -20,17 +20,16 @@ To install TextPinner, you can use:
 ```
 pip install TextPinner
 ```
-Please install Open AI's Clip from their github repository. This is needed by TextPinner
-
-```bash
+UNfortunately Clip is not a default pip package and it is mandatory for this tool to function. So you will need to download it directly from github :
+```
 pip install git+https://github.com/openai/CLIP.git
 ```
 
-You may also want to install cudatoolkit if you have a cuda enabled GPU. In this case, you have to use anaconda
-
+It is advised to install cudatoolkit if you have a cuda enabled GPU.
 ```bash
-conda install cudatoolkit
+pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113 
 ```
+
 
 # USE
 First import TextPinner class
@@ -38,22 +37,22 @@ First import TextPinner class
 from TextPinner import TextPinner
 ```
 
-Create an instance of TextPinner. There are one mandatory parameter which is the list of anchor text, and an optional parameter which is the maximum distance between the word and the anchors. This allows the AI to detect if the text the user is entering is too far from any of the anchors. By default the value is None (don't check for minimal distance). A value of 0.05 has proven to be a good distance for the tests we have done. Feel free to use another value :
+Create an instance of TextPinner. There are one mandatory parameter which is the list of anchor text, and an optional parameter which is the minimum similarity between the word and the anchors. This allows the AI to detect if the text the user is entering is too far from any of the anchors. By default the value is None (don't check for minimal distance). A value of 0.5 has proven to be a good distance for the tests we have done but this can be changed depending on the anchors you are using. Feel free to use another value :
 ```Python
-tp = TextPinner(["raise right hand", "raise left hand", "nod", "shake hands", "look left", "look right"], maximum_distance=0.05)
+tp = TextPinner(["raise right hand", "raise left hand", "nod", "shake hands", "look left", "look right"], minimum_similarity_level=0.5)
 ```
 
 Now you are ready to pin some text using process method that returns multiple useful outputs.
 
 ```Python
 text_command = input("Input a text :")
-output_text, index, probs, dists=tp.process(text_command)
+output_text, index, similarity=tp.process(text_command)
 ```
-- The index tells you which text of your anchors list is most lokely to have the same meaning as the text_command. If it is -1, this means that the meaning of the text is too far from any of the anchors. If maximum_distance is None then there is no maximum distance test and the AI will return the anchor with nearest meaning.
-
+- The index tells you which text of your anchors list is most likely to have the same meaning as the text_command. If it is -1, this means that the meaning of the text is too far from any of the anchors. If maximum_distance is None then there is no maximum distance test and the AI will return the anchor with nearest meaning.
 - output_text is literally the anchor text that has the nearest meaning to the one of text_command.
+- similarity is a numpy array containing the similarity of this text with each of the anchor texts. Useful to get an idea about the certainty of the algorithm about its decision.
 
-- probs is a list of probabilities of being the right anchor for each of the anchors.
-
-- dists is a list of the distances between the command_text and each of the anchor texts.
-
+# Examples
+In the examples section we provide two examples:
+1 - A simple text pinner example where the user is prompted to enter a text and then we tell him which anchortext is the nearest in meaning to the text he typed.
+2 - A voice command example that uses voice to inpuit the text then gives the most likely output

@@ -22,21 +22,22 @@ import numpy as np
 
 
 class TextPinner():
-    def __init__(self, anchor_texts:list, maximum_distance:float=None):
+    def __init__(self, anchor_texts:list, minimum_similarity_level:float=None):
         """Builds the TextPinner
 
         Args:
             anchor_texts (list[str]) : The list of anchor texts to pin text to
-            maximum_distance (float) : The maximum acceptable distance between the text and the anchors (to avoid pinning to wrong texts when completely different command is issued)
+            minimum_similarity_level (float) : The minimum acceptable similarity between the text and the anchors (to avoid pinning to wrong texts when completely different command is issued)
         """
         self.anchor_texts = anchor_texts
-        self.maximum_distance = maximum_distance
+        self.minimum_similarity_level = minimum_similarity_level
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.clip, _ = clip.load("ViT-B/32", device=self.device)
         self.anchor_texts_tokenized = clip.tokenize(self.anchor_texts).to(self.device)
         with torch.no_grad():
             # Now let's encode both text sets
             self.anchor_texts_embedding = self.clip.encode_text(self.anchor_texts_tokenized) # Anchor texts
+            self.anchor_texts_embedding /= self.anchor_texts_embedding.norm(dim=-1, keepdim=True)
 
     def process(self, command_text:str):
         """Processes text ang gives the text entended to
@@ -50,22 +51,13 @@ class TextPinner():
         command_text_tokenized = clip.tokenize([command_text]).to(self.device)
         with torch.no_grad():
             command_text_embedding = self.clip.encode_text(command_text_tokenized) # Just one text
-            dists = [np.square((self.anchor_texts_embedding[i,:]-command_text_embedding[0,:])).mean() for i in range(len(self.anchor_texts))]
-        # Convert distances to probabilities
-        mn = np.min(dists)
-        # If there is a maximum accepted distance then verify!
-        if self.maximum_distance is not None:
-            if mn>self.maximum_distance:
-                # None of the anchors has a meaning near the one proposed by the command_text
-                return "", -1, [0 for d in dists], dists
 
-        mx = np.max(dists)
-        range_ = mx-mn
-        # Compute a probability value
-        prob = np.array([1-(d-mn)/range_ for d in dists])
-        prob = prob/prob.sum()
-        # Get the index of the nearest anchor
-        text_index = np.argmin(dists)
-        # Return everything
-        return self.anchor_texts[text_index], text_index, prob, dists
+        command_text_embedding /= command_text_embedding.norm(dim=-1, keepdim=True)
+        similarity = (100.0 * command_text_embedding @ self.anchor_texts_embedding.T).softmax(dim=-1).detach().numpy()[0,:]
+        max = similarity.max()
+        if self.minimum_similarity_level is not None:
+            if max<self.minimum_similarity_level:
+                return "",-1, similarity
+        text_index = similarity.argmax()
+        return self.anchor_texts[text_index], text_index, similarity
 

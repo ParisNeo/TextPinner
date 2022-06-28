@@ -13,19 +13,21 @@ You can imagine doing this for a hue lighting system or other command based app.
 """
 from TextPinner import TextPinner
 
-tp = TextPinner(["raise right hand", "raise left hand", "nod", "shake hands", "look left", "look right"])
+tp = TextPinner(["raise right hand", "raise left hand", "nod", "shake hands", "look left", "look right"], 0.5)
+
+# you can place any text. For example if you put put your hand in my hand, the TextPinner will pin it to shake hands as it has the closest meaning
 text_command = input("Input a text :")
-output_text, index, probs, dists=tp.process(text_command)
+output_text, index, similarity=tp.process(text_command)
 
 # If index <0 then the text meaning is too far from any of the anchor texts. You can still use np.argmin(dists) to find the nearest meaning.
 # or just change the maximum_distance parameter in your TextPinner when constructing TextPinner
 
 if index>=0:
     # Finally let's give which text is the right one
-    print(f"The anchor text you are searching for is {output_text}")
+    print(f"\nThe anchor text you are searching for is:\n{output_text}\n")
 else:
     # Text is too far from any of the anchor texts
-    print(f"Your text meaning is very far from the anchors meaning. Please try again")
+    print(f"\nYour text meaning is very different from the anchors meaning. Please try again\n")
 
-for txt, prob, dist in zip(tp.anchor_texts, probs, dists):
-    print(f"text : {txt}\t\t prob \t\t {prob:0.2f}, dist \t\t {dist:0.2f}")
+for txt, sim in zip(tp.anchor_texts, similarity.tolist()):
+    print(f"text : {txt}\t\t similarity \t\t {sim:0.2f}")
