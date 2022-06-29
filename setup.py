@@ -17,7 +17,7 @@ requirements_dev = read_requirements("requirements_dev.txt")
 
 setuptools.setup(
     name="TextPinner",
-    version="0.0.4",
+    version="0.0.5",
     author="Saifeddine ALOUI",
     author_email="aloui.saifeddine@gmail.com",
     description="A python library for pinning a text to one of texts list. Useful for natural commands parsing.",

@@ -22,21 +22,22 @@ import numpy as np
 
 
 class TextPinner():
-    def __init__(self, anchor_texts:list, minimum_similarity_level:float=None):
+    def __init__(self, anchor_texts:list, minimum_similarity_level:float=None, force_cpu=False):
         """Builds the TextPinner
 
         Args:
             anchor_texts (list[str]) : The list of anchor texts to pin text to
             minimum_similarity_level (float) : The minimum acceptable similarity between the text and the anchors (to avoid pinning to wrong texts when completely different command is issued)
+            force_cpu(bool) : Force using CPU even when a cuda device is available
         """
         self.anchor_texts = anchor_texts
         self.minimum_similarity_level = minimum_similarity_level
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.device = "cuda" if torch.cuda.is_available() and not force_cpu else "cpu"
         self.clip, _ = clip.load("ViT-B/32", device=self.device)
         self.anchor_texts_tokenized = clip.tokenize(self.anchor_texts).to(self.device)
         with torch.no_grad():
             # Now let's encode both text sets
-            self.anchor_texts_embedding = self.clip.encode_text(self.anchor_texts_tokenized) # Anchor texts
+            self.anchor_texts_embedding = self.clip.encode_text(self.anchor_texts_tokenized).detach() # Anchor texts
             self.anchor_texts_embedding /= self.anchor_texts_embedding.norm(dim=-1, keepdim=True)
 
     def process(self, command_text:str):
@@ -50,10 +51,10 @@ class TextPinner():
         """
         command_text_tokenized = clip.tokenize([command_text]).to(self.device)
         with torch.no_grad():
-            command_text_embedding = self.clip.encode_text(command_text_tokenized) # Just one text
+            command_text_embedding = self.clip.encode_text(command_text_tokenized).detach() # Just one text
 
         command_text_embedding /= command_text_embedding.norm(dim=-1, keepdim=True)
-        similarity = (100.0 * command_text_embedding @ self.anchor_texts_embedding.T).softmax(dim=-1).detach().numpy()[0,:]
+        similarity = (100.0 * command_text_embedding @ self.anchor_texts_embedding.T).softmax(dim=-1).numpy()[0,:]
         max = similarity.max()
         if self.minimum_similarity_level is not None:
             if max<self.minimum_similarity_level:
