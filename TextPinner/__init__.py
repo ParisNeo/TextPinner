@@ -37,7 +37,7 @@ class TextPinner():
         self.anchor_texts_tokenized = clip.tokenize(self.anchor_texts).to(self.device)
         with torch.no_grad():
             # Now let's encode both text sets
-            self.anchor_texts_embedding = self.clip.encode_text(self.anchor_texts_tokenized).detach() # Anchor texts
+            self.anchor_texts_embedding = self.clip.encode_text(self.anchor_texts_tokenized).cpu().detach() # Anchor texts
             self.anchor_texts_embedding /= self.anchor_texts_embedding.norm(dim=-1, keepdim=True)
 
     def process(self, command_text:str):
