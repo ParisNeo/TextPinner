@@ -56,3 +56,29 @@ output_text, index, similarity=tp.process(text_command)
 In the examples section we provide two examples:
 1 - A simple text pinner example where the user is prompted to enter a text and then we tell him which anchortext is the nearest in meaning to the text he typed.
 2 - A voice command example that uses voice to inpuit the text then gives the most likely output
+
+## TextPinner example
+This example do not need any special libraries as it asks the user to input text then finds the nearest text in meaning from the anchor texts.
+## TextPinner Audio example
+This examle uses audio so that you can talk to the AI and it uses TextPinner to make the AI understand your querry and perform something. If the query is far from what the AI knows, it will tell you that the meaning of what you say is out of its scope. Here every thing is in Audio. you talk and the AI answers. So we need to install some libraries.
+
+We use gtt for text to speach audio synthesis and pygame to play the synthethized audio.
+
+To install it youse this command:
+```bash
+pip install gtts
+```
+We need to install poyaudio as it is no more in the Pypi repositories. So you can go here [https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio](PyAudio) and download the version suitable for your python distribution. Then install it using 
+```bash
+pip install <the path to the wheel file you just downloaded>
+```
+
+Now you are ready to talk to clip. Every time the AI will ask you to issue a commend. When you say something the AI analyzes the meaning and if it is close to the meening of anchor text, it will pin it to that functionality and tell you that the nearest anchor text is that one. If the meaning of what you said is different from the command, then the AI will tell you that it is far from the anchor texts and ask you to try again.
+
+To exit the application, you just need to say exit.
+
+## Conversational AI example
+
+This is more like a disctionary based conversation AI that uses TextPinner to make it easy to speak in natural language and pins to prefixed texts and gives predfines answers for each question.
+
+You basically need to install the same stuff as in TextPinner Audio example.

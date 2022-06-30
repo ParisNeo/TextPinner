@@ -1,24 +1,18 @@
 """TextPinner
 Author : Saifeddine ALOUI
-Description : Uses audio voice to pin text to a set of anchor texts. This is useful to build a natural language command module.
-Image I have a robot. For example the InMoov robot can do a bunch of actions but you some how need to ask it to do something by saying exactly what you have already specified as possible inputs.
-But what if you can say the command how ever you like it, and the robot understands which one of the actions is the one you intended it to?
-
-This code, uses Open-AI's Clip to encode both the text you say, and the list of anchor texts describing what the robot can do.
-Now we simply find the nearest anchor text encoding to the encoding of the text you said.
-Bingo, now you have anchored the text to waht the robot can do and you can say the command how ever you like it. The robot will understand.
-
-
-You can imagine doing this for a hue lighting system or other command based app. Be creative
+Description : A simple predefines answers chatbot using TextPinner to make it capable of understanding sentences in natural way
 """
 import sys
 import time
+
+import numpy as np
 from TextPinner import TextPinner
 from io import BytesIO
 # gtts is needed to generate text to speech
 from gtts import gTTS
 # pygame is needed for audio mixer to output the sound
 import pygame
+from datetime import datetime
 pygame.mixer.init()
 
 # You need to install speach recognition engine
@@ -27,11 +21,15 @@ import speech_recognition as sr
 # You also need pyaudio for using your microphone
 # You can find it here https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio select your version download it the ninstall it using pip install -e <the wheel file>
 
+# Let's build the inputs and outputs list
+conversation={
+    "Hi":["Hi how are you?", "Hi", "Hello there"],
+    "What's your name?":[f"My name is TextPinner. I am an AI based on Open AI's CLIP to pin your commands to a set of predefined ones to help you interact with me using natural language.", "My name is TextPinner but you can call me TP."],
+    "How old are you?":[f"I am {datetime.now()-datetime(2022, 7, 1)} old"]
+}
+
 # Let's create the TextPinner and the texts list
-# For example a set of actions to be performed by a robot
-# tp = TextPinner(["raise right hand", "raise left hand", "nod", "shake hands", "look left", "look right", "exit"], 0.8)
-# A commands to control lighting in a room
-tp = TextPinner(["What's your name?","Turn on the light", "Turn off the light", "Increase the lighting", "Decrease the lighting", "exit"], 0.55)
+tp = TextPinner(list(conversation.keys()), 0.55)
 
 # A useful function to say stuff using text to speech synthesis
 def say(text):
@@ -59,9 +57,7 @@ while not exit_app:
         # the surrounding noise level
         r.adjust_for_ambient_noise(source, duration=0.2)    
         # read the audio data from the default microphone
-        print("Please issue a command")
-        say("Please issue a command")
-        print("Listening...")
+        print("Listening, Say something...")
         audio_data = r.listen(source)
         print("Recognizing...")
         # convert speech to text
@@ -81,18 +77,22 @@ while not exit_app:
     # or just change the maximum_distance parameter in your TextPinner when constructing TextPinner
 
     if index>=0:
+        for key in conversation.keys():
+            if output_text==key:
+                rnd = np.random.randint(0,len(conversation[key]))
+                output = conversation[key][rnd]
+                print(output)
+                say(output)
+                break
         # Finally let's give which text is the right one
         if output_text=="exit":
             print(f"\nbye bye.\n")
             say("bye bye")
             exit_app=True
-        else:
-            print(f"\nThe anchor text you are searching for is:\n{output_text}\n")
-            say(f"The nearest anchor text to your query is {output_text}")
     else:
         # Text is too far from any of the anchor texts
-        print(f"\nYour text meaning is very different from the anchors meaning. Please try again\n")
-        say(f"Your text meaning is very different from the anchors meaning. Please try again")    
+        print("Sorry. I don't understand")
+        say("Sorry. I don't understand")
 
     for txt, sim in zip(tp.anchor_texts, similarity.tolist()):
         print(f"text : {txt}\t\t similarity \t\t {sim:0.2f}")
