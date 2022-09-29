@@ -3,10 +3,10 @@ A tool to pin text to a specific set of texts. Useful to build a tool that takes
 
 # Description
 TextPinner pins text to a set of anchor texts. This is useful to build a natural language command module.
-ImagINE I have a robot. For example the InMoov robot can do a bunch of actions but you some how need to ask it to do something by saying exactly what you have already specified as possible inputs.
+Imagine I have a robot. For example the InMoov robot can do a bunch of actions but you some how need to ask it to do something by saying exactly what you have already specified as possible inputs.
 But what if you can say the command how ever you like it, and the robot understands which one of the actions is the one you intended it to?
 
-This code, uses Open-AI's Clip to encode both the text you say, and the list of anchor texts describing what the robot can do.
+This code, uses Google's BERT model to encode both the text you say, and the list of anchor texts describing what the robot can do.
 Now we simply find the nearest anchor text encoding to the encoding of the text you said.
 Bingo, now you have anchored the text to waht the robot can do and you can say the command how ever you like it. The robot will understand.
 
@@ -19,11 +19,7 @@ You can imagine doing this for a hue lighting system or other command based app.
 To install TextPinner, you can use:
 ```
 pip install TextPinner
-```
-UNfortunately Clip is not a default pip package and it is mandatory for this tool to function. So you will need to download it directly from github :
-```
-pip install git+https://github.com/openai/CLIP.git
-```
+
 
 It is advised to install cudatoolkit if you have a cuda enabled GPU.
 ```bash
@@ -79,6 +75,6 @@ To exit the application, you just need to say exit.
 
 ## Conversational AI example
 
-This is more like a disctionary based conversation AI that uses TextPinner to make it easy to speak in natural language and pins to prefixed texts and gives predfines answers for each question.
+This is more like a dictionary based conversation AI that uses TextPinner to make it easy to speak in natural language and pins to prefixed texts and gives predefined answers for each question.
 
 You basically need to install the same stuff as in TextPinner Audio example.

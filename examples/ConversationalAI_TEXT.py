@@ -4,53 +4,53 @@ Description : A simple predefines answers chatbot using TextPinner to make it ca
 """
 import os
 from pathlib import Path
-import sys
-import time
-
 import numpy as np
 from TextPinner import TextPinner
-from io import BytesIO
-# gtts is needed to generate text to speech
-from gtts import gTTS
-# pygame is needed for audio mixer to output the sound
-import pygame
+
 from datetime import datetime
-pygame.mixer.init()
 
-# You need to install speach recognition engine
-# pip install SpeechRecognition
-import speech_recognition as sr
-# You also need pyaudio for using your microphone
-# You can find it here https://www.lfd.uci.edu/~gohlke/pythonlibs/#pyaudio select your version download it the ninstall it using pip install -e <the wheel file>
+# Let's create the TextPinner and the texts list
+tp = TextPinner(0.60)
 
-
+main_menu_sentences=None
 # A useful function to say stuff using text to speech synthesis
 def say(text):
-    # Language in which you want to convert
-    language = 'en'
-    
-    # Passing the text and language to the engine, 
-    # here we have marked slow=False. Which tells 
-    # the module that the converted audio should 
-    # have a high speed
-    mp3_fp = BytesIO()
-    tts = gTTS(text=text, lang=language, slow=False)
-    tts.write_to_fp(mp3_fp)
-    pygame.mixer.music.load(mp3_fp, "mp3")
-    pygame.mixer.music.play()  # works fine !
     print(text)
-    while pygame.mixer.music.get_busy():
-        pygame.time.wait(100)  # ms
+
+# We build vocabulary and interactions
+print("Building vocabilaries")
+cancel_detection = tp.buildEncodedAnchorsList(["cancel"])
+yesno_detection = tp.buildEncodedAnchorsList(["yes","no"])
 
 # Few tasks to illustrate how the AI may do things on demand
 def create_file():
     Path("tmp").mkdir(exist_ok=True)
-    with open("tmp/file.txt","w") as f:
-        f.write("File created !")
-    say("File created successfully")
+    fn = input("\nWhat is the file name you whish to use?\nUser>>>")
+    # Now we only need to detect if the user wants to cancel
+    tp.setEncodedAnchorsList(cancel_detection)
+    output_text, index, similarity= tp.process(fn)
+    if similarity[0]<0.8: # Not cancel
+        with open(f"tmp/{fn}.txt","w") as f:
+            f.write("File created !")
+        say("File created successfully")
+    else:
+        say("Command canceled")
+    tp.setEncodedAnchorsList(main_menu_sentences)
+
 def delete_file():
-    os.remove("tmp/file.txt")
-    say("File deleted successfully")    
+    fn = input("Are you sure ?\nUser>>>")
+    # Now we only need to detect if the user wants to cancel
+    tp.setEncodedAnchorsList(yesno_detection)
+    output_text, index, similarity= tp.process(fn)
+    if index==0:
+        os.remove("tmp/file.txt")
+        say("File deleted successfully")
+    elif index==1:
+        say("File deletion canceled")
+    else:
+        say("Not understood, file deletion canceled")
+    tp.setEncodedAnchorsList(main_menu_sentences)
+
 def help():
     say("Here are my anchor texts. You do not need to say these commands exactly. I can anderstand your intent.")
     print("Simple Conversational AI")
@@ -64,48 +64,40 @@ def exitapp():
 
 # Let's build the inputs and outputs list. Outputs will be selected randomly. You can have functions as outputs so that the AI may perform some tasks
 conversation={
+    "Clip":["Yes!"],
     "Hello":["Hi how are you?", "Hi", "Hello there"],
     "I am fine":["I am pleased to meet you","Happy that you are fine"],
-    "What's your name?":[f"My name is TextPinner. I am an AI based on Open AI's CLIP to pin your commands to a set of predefined ones to help you interact with me using natural language.", "My name is TextPinner but you can call me TP."],
-    "How old are you?":[f"I am {(datetime.now()-datetime(2022, 7, 1)).days} old"],
+    "What's your name?":[f"My name is TextPinner. I am an AI based on Google Bert encoder to pin your commands to a set of predefined ones to help you interact with me using natural language.", "My name is TextPinner but you can call me TP."],
+    "How old are you?":[f"I am {(datetime.now()-datetime(2022, 7, 1)).days} days old"],
     "Create a file":[create_file],
     "Delete a file":[delete_file],
-    "help":[help],
-    
+    "help":[help],    
     "exit":[exitapp]
 }
 # Feel free to add new interactions or even make the AI search the Web for you or interact with hardware, etc. The only limit is your imagination.
+main_menu_sentences = tp.buildEncodedAnchorsList(list(conversation.keys()))
 
-# Let's create the TextPinner and the texts list
-tp = TextPinner(list(conversation.keys()), 0.80)
+tp.setEncodedAnchorsList(main_menu_sentences)
+print("DONE")
 
 
 exit_app = False
+
 while not exit_app:
-    r = sr.Recognizer()
-    with sr.Microphone() as source:
-        # wait for a second to let the recognizer
-        # adjust the energy threshold based on
-        # the surrounding noise level
-        r.adjust_for_ambient_noise(source, duration=0.2)    
-        # read the audio data from the default microphone
-        print("Listening, Say something...")
-        print("User>>",end="")
-        audio_data = r.listen(source,timeout=20)
-        # convert speech to text
-        try:
-            text_command = r.recognize_google(audio_data, language='en')
-            print(text_command)
-        except:
-            print("\nAI>>",end="")
-            say("Please say an english sentence")
-            continue
+    # read the audio data from the default microphone
+    print("Listening, Say something...")
+    print("User>>",end="")
+    # convert speech to text
+    try:
+        text_command = input(">>>")
+    except:
+        continue
 
             
 
     # you can place any text. For example if you put put your hand in my hand, the TextPinner will pin it to shake hands as it has the closest meaning
     output_text, index, similarity=tp.process(text_command)
-
+    print(f"nearest meaning : {output_text} ({similarity[index]*100}%)")
     # If index <0 then the text meaning is too far from any of the anchor texts. You can still use np.argmin(dists) to find the nearest meaning.
     # or just change the maximum_distance parameter in your TextPinner when constructing TextPinner
     print("AI>>",end="")
